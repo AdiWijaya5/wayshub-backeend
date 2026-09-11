@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+
+  backend:
+    image: adwijayajy/wayshub-backend:production
+    container_name: wayshub-be
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file: .env
+    volumes:
+      - ./config/config.json:/app/config/config.json
+      - ./migrations:/app/migrations
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      database:
+        condition: service_healthy
+    command: >
+      sh -c "./node_modules/.bin/sequelize-cli db:migrate --env production &&
+             pm2-runtime start index.js --name 'wayshub-api'"
+    networks:
+      - adi-network
+
+  database:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    command:
+      - --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+    networks:
+      - adi-network
+
+volumes:
+  mysql_data:
+
+networks:
+  adi-network:
+    driver: bridge
+
+
+
+
+
