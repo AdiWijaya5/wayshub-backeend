@@ -94,7 +94,7 @@ jobs:
 
         # testing app TestSprit AI 
       - name: Run TestSprite AI Tests
-        uses: TestSprite/run-action@v1
+        uses: TestSprite/run-action@v2
         with:
           testsprite-api-key: ${{ secrets.TESTSPRITE_API_KEY }}
           base_url: "https://api.adiwijaya.studentdumbways.my.id/api/v1"
