@@ -48,6 +48,21 @@ pipeline {
                     sh "ssh -o StrictHostKeyChecking=no ${server} 'mkdir -p ~/${directory}'"
                     sh "ssh -o StrictHostKeyChecking=no ${server} 'rm -f ~/${directory}/docker-compose.yaml'"
                     sh "scp -o StrictHostKeyChecking=no docker-compose.yaml ${server}:~/${directory}/docker-compose.yaml"
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ${server} '
+                        cd ~/${directory}
+                        echo "MYSQL_ROOT_PASSWORD=rootpassword_anda" > .env
+                        echo "MYSQL_DATABASE=wayshub_db" >> .env
+                        echo "MYSQL_USER=wayshub_user" >> .env
+                        echo "MYSQL_PASSWORD=userpassword_anda" >> .env
+                        echo "DB_HOST=wayshub-db" >> .env
+                        echo "DB_NAME=wayshub_db" >> .env
+                        echo "DB_USER=wayshub_user" >> .env
+                        echo "DB_PASSWORD=userpassword_anda" >> .env
+                        echo "PORT=5000" >> .env
+                        echo "NODE_ENV=production" >> .env
+                    '
+                    """
                     
                     sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker compose pull'"
                     sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker compose down || true'"
