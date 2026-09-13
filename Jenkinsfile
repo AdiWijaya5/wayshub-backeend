@@ -4,7 +4,7 @@ def dockerHubSecret = 'dockerhub-creds'
 def server = 'jenkins@54.251.210.57' 
 def directory = 'docker/wayshub-backend'         
 def branch = 'main' 
-def images = 'adiwijayajy/wayshub-backend:backend-stage' 
+def images = 'adiwijayajy/wayshub-backend:stage' 
 def container = 'wayshub-be'
 
 pipeline {
@@ -41,34 +41,13 @@ pipeline {
             }
         }
 
-        stage('Deploy Backend & MySQL via Compose') {
+        stage('Deploy Backend via Compose') {
             steps {
-                echo "Deploying Backend and MySQL to server ${server} via Docker Compose..."
+                echo "Deploying Backend ${server} via Docker Compose..."
                 sshagent(["${secret}"]) {
                     sh "ssh -o StrictHostKeyChecking=no ${server} 'mkdir -p ~/${directory}'"
                     sh "ssh -o StrictHostKeyChecking=no ${server} 'rm -f ~/${directory}/docker-compose.yaml'"
-                    sh "scp -o StrictHostKeyChecking=no docker-compose.yaml ${server}:~/${directory}/docker-compose.yaml"
-                    
-                    sh """
-                    ssh -o StrictHostKeyChecking=no ${server} '
-                        cd ~/${directory}
-                        echo "MYSQL_ROOT_PASSWORD=rootpassword_anda" > .env
-                        echo "MYSQL_DATABASE=wayshub_db" >> .env
-                        echo "MYSQL_USER=wayshub_user" >> .env
-                        echo "MYSQL_PASSWORD=userpassword_anda" >> .env
-                        echo "DB_HOST=wayshub-db" >> .env
-                        echo "DB_NAME=wayshub_db" >> .env
-                        echo "DB_USER=wayshub_user" >> .env
-                        echo "DB_PASSWORD=userpassword_anda" >> .env
-                        echo "PORT=5000" >> .env
-                        echo "NODE_ENV=production" >> .env
-                    '
-                    """
-
-                    sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker compose pull'"
-                    sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker compose down || true'"
-                    sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker compose up -d'"
-                    sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker image prune -f'"
+                    sh 'ssh -o StrictHostKeyChecking=no ' + server + ' "cd ~/' + directory + ' && docker compose pull && docker compose down || true && docker compose up -d && docker image prune -f"'
                 }
             }
         }
