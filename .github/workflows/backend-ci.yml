@@ -97,7 +97,7 @@ jobs:
         uses: TestSprite/run-action@v1
         with:
           testsprite-api-key: ${{ secrets.TESTSPRITE_API_KEY }}
-          base_url: "https://api.adiwijaya.studentdumbways.my.id"
+          base_url: "https://api.adiwijaya.studentdumbways.my.id/api/v1"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           blocking: "true" 
 
