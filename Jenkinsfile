@@ -45,13 +45,8 @@ pipeline {
             steps {
                 echo "Deploying Backend and MySQL to server ${server} via Docker Compose..."
                 sshagent(["${secret}"]) {
-                    // 1. Membuat direktori otomatis di server AWS target jika belum ada
                     sh "ssh -o StrictHostKeyChecking=no ${server} 'mkdir -p ~/${directory}'"
-                    
-                    // 2. Menyalin berkas docker-compose.yaml backend + mysql terbaru ke server target
                     sh "scp -o StrictHostKeyChecking=no docker-compose.yaml ${server}:~/${directory}/docker-compose.yaml"
-                    
-                    // 3. Masuk ke direktori backend, pull image terbaru, dan jalankan multi-container secara background
                     sh 'ssh -o StrictHostKeyChecking=no ' + server + ' "cd ~/' + directory + ' && docker compose pull && docker compose down || true && docker compose up -d && docker image prune -f"'
                 }
             }
@@ -92,7 +87,6 @@ pipeline {
     }
 }
 
-// Fungsi pembantu kirim notifikasi ke Discord
 def sendDiscordNotification(String credentialId, String text, int colorCode) {
     withCredentials([string(credentialsId: credentialId, variable: 'DISCORD_WEBHOOK')]) {
         def jsonPayload = "{\"embeds\": [{\"title\": \"Jenkins CI/CD Alert\", \"description\": \"${text}\", \"color\": ${colorCode}}]}"
