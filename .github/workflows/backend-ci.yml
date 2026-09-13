@@ -1,11 +1,11 @@
-name: Backend CI/CD to Docker Hub
+name: CI/CD Backend to AWS EC2
 
 on:
   push:
     branches: [ "main", "master" ]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -41,16 +41,29 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/wayshub-backend:latest
 
-      - name: Down Docker Compose
+      - name: Down Docker Compose (Local Runner Cleanup)
         if: always()
         run: docker compose down
+
+      - name: Deploy to AWS EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/adi/docker/wayshub-backend
+            git pull origin main
+            docker compose pull
+            docker compose up -d --force-recreate
+            docker system prune -f
 
       - name: Send Discord Notification (Success)
         if: success()
         uses: rjstone/discord-webhook-notify@v1
         with:
           severity: info
-          details: "Sukses! Pipeline CI/CD berjalan lancar dan image baru berhasil di-push ke Docker Hub."
+          details: "Sukses! Aplikasi backend wayshub berhasil di-deploy otomatis ke AWS EC2 dan domain https://api.adiwijaya.studentdumbways.my.id."
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
       - name: Send Discord Notification (Failure)
@@ -58,5 +71,5 @@ jobs:
         uses: rjstone/discord-webhook-notify@v1
         with:
           severity: error
-          details: "Gagal! Pipeline CI/CD mengalami error pada proses test atau build."
+          details: "Gagal! Pipeline CI/CD mengalami kendala pada tahap test, build, atau deployment ke EC2."
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
