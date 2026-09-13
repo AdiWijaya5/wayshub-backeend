@@ -12,7 +12,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Create database
+        #masuk ke database 
+      - name: database
         run: |
           echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" 
           echo "DB_NAME=${{ secrets.DB_NAME }}" 
@@ -22,12 +23,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+        #login docker images
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+        #build docker images
       - name: Build Docker Image 
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/wayshub-backend:latest .
@@ -54,6 +57,7 @@ jobs:
           details: "Sukses! Tahap Docker Compose dan Backend Tests berhasil dijalankan."
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
+        # uplode docker images
       - name: Push Docker Image to Docker Hub
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/wayshub-backend:latest
@@ -66,6 +70,7 @@ jobs:
           details: "Sukses! Docker image berhasil di-push ke Docker Hub."
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
+        # matikan docker images dan hapus images
       - name: Down Docker Compose and Cleanup Images
         if: always()
         run: |
@@ -73,6 +78,7 @@ jobs:
           docker rmi ${{ secrets.DOCKER_USERNAME }}/wayshub-backend:latest || true
           docker image prune -f
 
+        # build docker compose
       - name: Deploy to AWS Server
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -86,12 +92,21 @@ jobs:
             docker compose up -d --force-recreate
             docker system prune -f
 
-      - name: Send Discord Notification (Success)
+        # testing app TestSprit AI 
+      - name: Run TestSprite AI Tests
+        uses: TestSprite/run-action@v1
+        with:
+          testsprite-api-key: ${{ secrets.TESTSPRITE_API_KEY }}
+          base_url: "https://api.adiwijaya.studentdumbways.my.id"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          blocking: "true" 
+
+      - name: Send Discord Notification (TestSprite AI Testing Passed)
         if: success()
         uses: rjstone/discord-webhook-notify@v1
         with:
           severity: info
-          details: "Sukses! Aplikasi backend wayshub berhasil di-deploy otomatis ke AWS Server dan domain https://api.adiwijaya.studentdumbways.my.id."
+          details: "AI Testing Selesai: TestSprite berhasil memvalidasi aplikasi secara otomatis tanpa error pada domain https://api.adiwijaya.studentdumbways.my.id."
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
       - name: Send Discord Notification (Failure)
@@ -99,5 +114,5 @@ jobs:
         uses: rjstone/discord-webhook-notify@v1
         with:
           severity: error
-          details: "Gagal! Pipeline CI/CD mengalami kendala pada tahap build, test, push, atau deployment ke AWS Server."
+          details: "Gagal! Pipeline CI/CD mengalami kendala pada tahap build, test, push, deployment, atau hasil validasi TestSprite AI."
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
