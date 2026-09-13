@@ -41,13 +41,18 @@ pipeline {
             }
         }
 
-        stage('Deploy Backend & MySQL via Compose') {
+         stage('Deploy Backend & MySQL via Compose') {
             steps {
                 echo "Deploying Backend and MySQL to server ${server} via Docker Compose..."
                 sshagent(["${secret}"]) {
                     sh "ssh -o StrictHostKeyChecking=no ${server} 'mkdir -p ~/${directory}'"
+                    sh "ssh -o StrictHostKeyChecking=no ${server} 'rm -f ~/${directory}/docker-compose.yaml'"
                     sh "scp -o StrictHostKeyChecking=no docker-compose.yaml ${server}:~/${directory}/docker-compose.yaml"
-                    sh 'ssh -o StrictHostKeyChecking=no ' + server + ' "cd ~/' + directory + ' && docker compose --env-file /dev/null pull && docker compose --env-file /dev/null down || true && docker compose --env-file /dev/null up -d && docker image prune -f"'
+                    
+                    sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker compose pull'"
+                    sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker compose down || true'"
+                    sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker compose up -d'"
+                    sh "ssh -o StrictHostKeyChecking=no ${server} 'cd ~/${directory} && docker image prune -f'"
                 }
             }
         }
