@@ -47,7 +47,7 @@ pipeline {
                 sshagent(["${secret}"]) {
                     sh "ssh -o StrictHostKeyChecking=no ${server} 'mkdir -p ~/${directory}'"
                     sh "scp -o StrictHostKeyChecking=no docker-compose.yaml ${server}:~/${directory}/docker-compose.yaml"
-                    sh 'ssh -o StrictHostKeyChecking=no ' + server + ' "cd ~/' + directory + ' && docker compose --env-file /dev/null pull && docker compose --env-file /dev/null down || true && docker compose --env-file /dev/null up -d && docker image prune -f"
+                    sh 'ssh -o StrictHostKeyChecking=no ' + server + ' "cd ~/' + directory + ' && docker compose --env-file /dev/null pull && docker compose --env-file /dev/null down || true && docker compose --env-file /dev/null up -d && docker image prune -f"'
                 }
             }
         }
