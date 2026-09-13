@@ -1,0 +1,55 @@
+name: Backend CI with Docker Compose
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create .env file
+        run: |
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          
+      - name: Run Docker Compose (App & MySQL)
+        run: docker compose up -d
+        
+      - name: Check Container Status
+        run: docker compose ps
+
+      - name: Wait for MySQL to be ready
+        run: |
+          echo "Menunggu MySQL siap..."
+          # Looping sederhana untuk memastikan port MySQL terbuka
+          for i in {1:30}; do
+            if docker compose exec -T db mysqladmin ping -h"localhost" -u"root" -prootpassword --silent; then
+              echo "MySQL sudah siap!"
+              exit 0
+            fi
+            echo "Menunggu MySQL..."
+            sleep 3
+          done
+          echo "Timeout menunggu MySQL!"
+          exit 1
+
+      - name: Run Backend Tests
+        run: |
+          # Jalankan perintah test di dalam container backend Anda
+          # Sesuaikan 'backend' dengan nama service di docker-compose.yml Anda
+          docker compose exec -T backend npm test
+
+      - name: Down Docker Compose
+        if: always()
+        run: docker compose down
