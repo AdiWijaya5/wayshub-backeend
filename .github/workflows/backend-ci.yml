@@ -90,23 +90,14 @@ jobs:
             git pull origin main
             docker compose pull
             docker compose up -d --force-recreate
-            docker system prune -f
+            docker system prune -f 
 
-        # testing app TestSprit AI 
-      - name: Run TestSprite AI Tests
-        uses: TestSprite/run-action@v2
-        with:
-          testsprite-api-key: ${{ secrets.TESTSPRITE_API_KEY }}
-          base_url: "https://api.adiwijaya.studentdumbways.my.id/api/v1"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          blocking: "true" 
-
-      - name: Send Discord Notification (TestSprite AI Testing Passed)
+      - name: Send Discord Notification (Deploy to AWS Server)
         if: success()
         uses: rjstone/discord-webhook-notify@v1
         with:
           severity: info
-          details: "AI Testing Selesai: TestSprite berhasil memvalidasi aplikasi secara otomatis tanpa error pada domain https://api.adiwijaya.studentdumbways.my.id."
+          details: "🚀 Backend Deployment Sukses! Aplikasi frontend wayshub berhasil di-deploy otomatis ke AWS Server dan domain https://api.adiwijaya.studentdumbways.my.id."
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
       - name: Send Discord Notification (Failure)
